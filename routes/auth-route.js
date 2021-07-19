@@ -5,14 +5,14 @@ const authController=require('../controllers/auth-controller');
 
 
 
-router.route('/signup')
-        .post(authController.signUp)
+router.post('/signup',authController.signUp)
+router.delete('/logout',authController.logout)
 router.route('/login')
       .post(authController.logIn)
-router.route('/forgetPassword')
+router.route('forgetPassword')
         .post(authController.forgetPassword)
-router.route('/resetPassword')
-        .post(authController.resetPassword)
+router.route('resetPassword')
+        .post(authController.restrictTo('classCustomer'),authController.resetPassword)
 
         
 module.exports=router;

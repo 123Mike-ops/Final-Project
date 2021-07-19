@@ -2,14 +2,14 @@ const express=require('express')
 
 const router=express.Router();
 const itemController=require('../controllers/item-controller');
-
+const authController=require('../controllers/auth-controller');
 
 
 
 router.route('/')
-        .post(itemController.addItem)
+        .post(authController.restrictTo('seller','broker'),itemController.addItem)
         .get(itemController.getItem)
-        .delete(itemController.deleteItem)
+        .delete(authController.restrictTo('seller','broker'),itemController.deleteItem)
         .patch(itemController.updateItem)
 router.route('/findItemById')
         .get(itemController.findItem)

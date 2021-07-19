@@ -3,6 +3,10 @@ const experess= require('express')
 const Comment=require('../models/comment');
 
 
-exports.giveComment=async (req,res,next)=>{}
+exports.giveCommentOnBroker=async (req,res,next)=>{}
 
-exports.getComment=async (req,res,next)=>{}
+exports.getCommentOnBroker=async (req,res,next)=>{}
+
+exports.giveCommentOnItem=async (req,res,next)=>{}
+
+exports.getCommentOnItem=async (req,res,next)=>{}
