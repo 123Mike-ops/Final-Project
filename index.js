@@ -5,6 +5,7 @@ const dontenv=require('dotenv').config();;
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
 const mongoose = require("mongoose");
+const cookieParser=require('cookie-parser');
 
 const globalErrorHandler=require('./controllers/error-controller');    //error handlers
 const AppError=require('./utils/appError');
@@ -18,9 +19,13 @@ const reportRoute=require('./routes/report-route');
 const requestRoute=require('./routes/request-route');
 const accountRoute=require('./routes/account-route');
 const warningRoute=require('./routes/warning-route');
+var cors = require('cors')
+
+app.use(cors()) // Use this after the variable declaration
   // Express Bodyparser
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+app.use(cookieParser());
 app.use(bodyparser.json());
 
 
@@ -28,7 +33,9 @@ app.use(bodyparser.json());
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
-    useCreateIndex: true
+    useCreateIndex: true,
+    useUnifiedTopology:true,
+    useFindAndModify:false
   })
   .then(() => console.log("MongoDB connected..."))
   .catch((err) => console.log(err));

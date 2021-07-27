@@ -1,56 +1,42 @@
 const express=require('express')
 
 const User=require('../models/user');
+const UserProfile=require('../models/user-profile');
 const bcrypt=require('bcryptjs')
 const jwt =require('jsonwebtoken');
 
 const catchAsync=require('../utils/catchAsync');
-
-exports.protect=async(req,res,next)=>{
-  let token;
+const AppError=require('../utils/appError');
+const userProfile = require('../models/user-profile');
+exports.protect=catchAsync(async(req,res,next)=>{
+  
    
     
-  //1)check if there is a token
+  //1)check if there is a user from session store
  
-     if(req.headers.authorization && req.headers.authorization.startsWith('Bearer')){
-           token= req.headers.authorization.split(' ')[1];
-              }
+  const userId=req.session.user.id;
+  
+  const currentUser=await User.findById(userId);
 
-     if(!token){
-        return next(new Error("you are not logged in to access"),401);
+       if(!currentUser){
+       return next( new AppError("user has been logged out. try to log in again !"));
      }
 
-  //2)verification token
-   const decoded=await promisify(jwt.verify)(token,'my-secrete-of-long-character-ker');
+          //4)check if the user changes password after the token was issued
 
-     
-  //3)check if the user still exists
+          // if(currentUser.passwordChangedAfter(decoded.iat)){
+            
+          //   return next(res.json({status:"fail",message:"user changed password! Login Again!"}));
 
-   const  currentUser=await User.findById(decoded.id);
-
-    if(!currentUser){
-       return next( res.json({status:"fail",message:"no user is belonging to this token"}));
-     }
-
-
-
-  //4)check if the user changes password after the token was issued
-
-  if(currentUser.passwordChangedAfter(decoded.iat)){
-     
-     return next(res.json({status:"fail",message:"user changed password! Login Again!"}));
-
-  }
+          // }
   req.user=currentUser; //gives users info for next middle ware after protect lalew middlware yestewal
   next();
 
-}
+})
 
 exports.restrictTo= (...roles)=>{
      
   return (req,res,next)=>{
-
-  
 
          if(! roles.includes(req.user.roles)){
             
@@ -73,17 +59,23 @@ exports.isSuspended=catchAsync(async (req,res,next)=>{
 
 exports.signUp=catchAsync(async (req,res,next)=>{
 
-    const {email,password}=req.body;
+    const {userName,email,password,passwordConfirm}=req.body;
    
     const salt=await bcrypt.genSalt();
     const passwordHash=await bcrypt.hash(password,salt);
     const newUser=new User({
             email,passwordHash
         })
-        const savedUser=await newUser.save();
+    const savedUser=await newUser.save();
+  
+          //open profile for new user
+    const userProfile=new UserProfile({
+            userId:savedUser._id
+          })
+      const profileSaved=await userProfile.save();
 
 
-        const sessUser = { id: savedUser.id, name: savedUser.name, email: savedUser.email };
+        const sessUser =  savedUser;
     req.session.user = sessUser; // Auto saves session data in mongo store
 
     res.json({ msg: " Logged In Successfully", sessUser }); // sends cookie with sessionID automatically in response
@@ -95,13 +87,18 @@ exports.signUp=catchAsync(async (req,res,next)=>{
 exports.logIn=catchAsync (async (req,res,next)=>
 {
     
-    const {email,password}=req.body;
-   
-    if(!email||!password){
+    const {userName,password}=req.body;
+  
+
+    if(!userName||!password){
+     
       return res.json({message:"please enter valid credentials"});
     }
-
-    const user=await User.findOne({email}).select('+password');
+  
+    
+    // const user=await User.findOne({email}).select('+passwordHash'); //use this for password field select value to be false ...password:{select:false}
+       const user=await User.findOne({userName});
+   
       if (!user||!(await user.correctPassword(password,user.passwordHash)))
       {
 
@@ -109,13 +106,13 @@ exports.logIn=catchAsync (async (req,res,next)=>
 
       }
 
-    const sessUser = { id: user._id,  email: user.email };
+    const sessUser = user;
     req.session.user = sessUser; // Auto saves session data in mongo store
 
-    res.json({ msg: " Logged In Successfully", sessUser }); // sends cookie with sessionID automatically in response
+    res.send( sessUser ); // sends cookie with sessionID automatically in response
 })
-exports.logout=catchAsync(async(req,res,next)=>{
 
+exports.logout=catchAsync(async(req,res,next)=>{
 
     //this function used with delete method route 
     req.session.destroy((err) => {
@@ -123,10 +120,11 @@ exports.logout=catchAsync(async(req,res,next)=>{
         if (err) throw err;
         res.clearCookie("session-id"); // clears cookie containing expired sessionID
         res.send("Logged out successfully");
+        console.log("delchalew")
       });
 
-}
-)
+})
+
 exports.forgetPassword=async(req,res,next)=>{}
 
 exports.resetPassword=async (req,res,next)=>{}

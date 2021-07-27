@@ -4,11 +4,14 @@ const validator=require('validator');
 const crypto=require('crypto');
 
 const userSchema=mongoose.Schema({
+    userName:{
+        type:String,
+        unique:true},
     email:{type:String,
         Required:[true,'email is mandatory to signUp'],
         Unique:true},
 
-    passwordHash:{type:String,required:true},
+    passwordHash:{type:String,required:true,select:false},
     passwordConfirm:{
         type:String,
         Required:[true,'please confirm your password'],
@@ -19,7 +22,8 @@ const userSchema=mongoose.Schema({
             message:'password does not matches'
         }
     },
-    role:{type:String,
+    role:{
+        type:String,
         required:true,
         enum:['admin','classCustomer','seller','broker'],
         default:'classCustomer'

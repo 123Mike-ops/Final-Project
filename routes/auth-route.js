@@ -13,6 +13,10 @@ router.route('forgetPassword')
         .post(authController.forgetPassword)
 router.route('resetPassword')
         .post(authController.restrictTo('classCustomer'),authController.resetPassword)
-
+router.get('/getSession',async(req,res)=>{
+        res.send(req.session);
+})
+     
+              
         
 module.exports=router;
